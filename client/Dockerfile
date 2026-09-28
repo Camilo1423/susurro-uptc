@@ -20,7 +20,7 @@ COPY . .
 RUN npm run build
 
 # ─────────────────────────── Serve (Nginx) ───────────────────────────
-FROM nginx:alpine AS runner
+FROM nginx:1.27-alpine AS runner
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 80
