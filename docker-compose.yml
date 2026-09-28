@@ -1,0 +1,84 @@
+# anomChat / Susurro — stack de producción.
+# Copia .env.example a .env y ajusta los valores antes de `docker compose up -d --build`.
+# Postgres y Redis quedan SOLO en la red interna (no publicados a internet);
+# a internet se exponen únicamente `client` y `server`.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # Inyecta SPACES_*, JWT_*, COOKIE_*, CORS_ORIGINS, etc. desde .env.
+    env_file: .env
+    environment:
+      ENV: production
+      NODE_ENV: production
+      PORT: "3000"
+      # DATABASE_URL y REDIS_URL se arman aquí apuntando a los servicios internos
+      # (tienen prioridad sobre lo que venga del env_file).
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${SERVER_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        # La URL pública del backend se hornea en el build del cliente.
+        URL_API_GATEWAY: ${URL_API_GATEWAY}
+        IS_PRODUCTION: "true"
+        ENV: production
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "${CLIENT_PORT:-8080}:80"
+
+volumes:
+  pgdata:
+  redisdata:

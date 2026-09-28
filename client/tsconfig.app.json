@@ -1,0 +1,51 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "types": ["vite/client"],
+    "allowArbitraryExtensions": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+
+    /* Path aliases (espejo de jsconfig.json / vite.config.ts) */
+    "paths": {
+      "@Constant": ["./src/config"],
+      "@Utils": ["./src/utils"],
+      "@Container": ["./src/container"],
+      "@Types": ["./src/types"],
+      "@UseCase": ["./src/services/useCases"],
+      "@Services": ["./src/services"],
+      "@Routes": ["./src/routes"],
+      "@Pages": ["./src/pages"],
+      "@Pages/*": ["./src/pages/*"],
+      "@Components": ["./src/components"],
+      "@Hooks": ["./src/hooks"],
+      "@Providers": ["./src/providers"],
+      "@Redux": ["./src/store"],
+      "@Assets/*": ["./src/assets/*"],
+      "@Middleware": ["./src/middleware"]
+    },
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Decoradores (InversifyJS) */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,11 @@
+import { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PrismaClient } from '../../../generated/prisma/client.js';
+import { PrismaModelDelegate, PrismaPaginationOptions } from './utils/prisma-pagination.util.js';
+import { PagedValue } from './types/pagination.type.js';
+export declare class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+    constructor(configService: ConfigService);
+    onModuleInit(): Promise<void>;
+    onModuleDestroy(): Promise<void>;
+    paginate<T>(model: PrismaModelDelegate, options: PrismaPaginationOptions): Promise<PagedValue<T>>;
+}

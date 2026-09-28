@@ -1,0 +1,223 @@
+// Prisma schema — anomChat (server).
+// Modelo de datos de usuario + autenticación (sesiones y refresh tokens),
+// clonado de la arquitectura de RIA (radilab) pero SIN permisos/perfiles/tenant.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Catálogo de tipos de documento (CC, TI, CE, …). Lookup para los usuarios.
+model DocumentType {
+  id          String   @id @unique @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(100)
+  code        String   @unique @db.VarChar(20)
+  description String?  @db.Text
+  status      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users User[]
+
+  @@index([name])
+  @@index([code])
+  @@map("anomchat_document_types")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
+  DELETED
+}
+
+/// Usuario del sistema. Datos personales + credenciales + control de bloqueo por
+/// intentos fallidos. Nunca se expone `password`.
+model User {
+  id                    String     @id @unique @default(uuid()) @db.Uuid
+  email                 String     @unique @db.VarChar(255)
+  username              String     @unique @db.VarChar(50)
+  password              String
+  firstName             String     @map("first_name") @db.VarChar(100)
+  secondName            String?    @map("second_name") @db.VarChar(100)
+  firstLastName         String     @map("first_last_name") @db.VarChar(100)
+  secondLastName        String?    @map("second_last_name") @db.VarChar(100)
+  documentTypeId        String     @map("document_type_id") @db.Uuid
+  documentNumber        String     @map("document_number") @db.VarChar(50)
+  phoneNumber           String?    @map("phone_number") @db.VarChar(20)
+  // PIN de descubrimiento: ÚNICO en el sistema, es la forma de encontrar a un
+  // usuario. El default (dbgenerated) lo autogenera en BD (8 hex en mayúscula);
+  // la app lo genera con reintento para garantizar unicidad.
+  pin                   String     @unique @default(dbgenerated("(upper(substr(md5((random())::text), 1, 8)))")) @db.VarChar(16)
+  status                UserStatus @default(PENDING)
+  emailVerified         Boolean    @default(false) @map("email_verified")
+  requireChangePassword Boolean    @default(false) @map("require_change_password")
+  failedAttempts        Int        @default(0) @map("failed_attempts")
+  lockedUntil           DateTime?  @map("locked_until")
+  // Momento del bloqueo por intentos fallidos. USO INTERNO: nunca se expone.
+  blockedAt             DateTime?  @map("blocked_at")
+  lastLogin             DateTime?  @map("last_login")
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  documentType          DocumentType           @relation(fields: [documentTypeId], references: [id], onDelete: Restrict)
+  sessions              Session[]
+  refreshTokens         RefreshToken[]
+  blackListAccessTokens BlackListAccessToken[]
+  avatars               UserAvatar[]
+  conversationsAsA      Conversation[]         @relation("ConversationUserA")
+  conversationsAsB      Conversation[]         @relation("ConversationUserB")
+  sentMessages          Message[]              @relation("MessageSender")
+
+  @@index([email])
+  @@index([username])
+  @@index([status])
+  @@index([documentTypeId])
+  @@index([pin])
+  @@map("anomchat_users")
+}
+
+/// Sesión activa (una por access token vigente). `jti` guarda el identificador
+/// único (JTI) del access token; `sessionKey` ata la sesión a su cadena de refresh.
+model Session {
+  id         String   @id @unique @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  jti        String   @unique @db.Uuid
+  sessionKey String   @map("session_key") @db.Uuid
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent")
+  isActive   Boolean  @default(true) @map("is_active")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([jti])
+  @@index([expiresAt])
+  @@map("anomchat_sessions")
+}
+
+/// Refresh token (rotado en cada refresh). `jti` guarda el identificador único
+/// (JTI) del refresh JWT. `isRevoked` marca la revocación persistida.
+model RefreshToken {
+  id         String   @id @unique @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  sessionKey String   @map("session_key") @db.Uuid
+  jti        String   @db.Uuid
+  isRevoked  Boolean  @default(false) @map("is_revoked")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jti])
+  @@index([userId])
+  @@index([jti])
+  @@index([expiresAt])
+  @@map("anomchat_refresh_tokens")
+}
+
+enum AvatarType {
+  THUMBNAIL
+  ORIGINAL
+}
+
+/// Foto de perfil del usuario. Dos filas por usuario como máximo (una por tipo):
+/// `THUMBNAIL` (pequeña) y `ORIGINAL` (detalle, calidad similar). Ambas en webp.
+model UserAvatar {
+  id        String     @id @unique @default(uuid()) @db.Uuid
+  userId    String     @map("user_id") @db.Uuid
+  type      AvatarType
+  /// Key del objeto en el bucket (p. ej. avatars/<userId>/<userId>-thumbnail.webp).
+  key       String     @db.VarChar(255)
+  /// URL pública del objeto.
+  url       String     @db.VarChar(500)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@map("anomchat_user_avatars")
+}
+
+/// Blacklist de access tokens revocados (por JTI). Defensa en profundidad para
+/// invalidar de inmediato un access token aún no expirado (logout, rotación,
+/// bloqueo). La validación rápida en cada request la hace Redis; esta tabla es
+/// el respaldo persistente.
+model BlackListAccessToken {
+  id        String   @id @unique @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  jti       String   @db.Uuid
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jti])
+  @@index([userId])
+  @@index([jti])
+  @@map("anomchat_blacklist_access_tokens")
+}
+
+/// Conversación entre DOS usuarios (tabla intermedia — hace el rol de "chat").
+/// Cada participante tiene un alias asignado por el sistema (nombres tipo animal,
+/// sin relación con el usuario) y su propio flag de modo anónimo: si `anonymousX`
+/// es true, la contraparte lo ve por su alias; si es false, ve su identidad real.
+/// La app debe canonicalizar el par (userA = id menor) para evitar duplicados A/B.
+model Conversation {
+  id            String    @id @unique @default(uuid()) @db.Uuid
+  userAId       String    @map("user_a_id") @db.Uuid
+  userBId       String    @map("user_b_id") @db.Uuid
+  aliasA        String    @map("alias_a") @db.VarChar(60)
+  aliasB        String    @map("alias_b") @db.VarChar(60)
+  anonymousA    Boolean   @default(true) @map("anonymous_a")
+  anonymousB    Boolean   @default(true) @map("anonymous_b")
+  lastMessageAt DateTime? @map("last_message_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  userA    User      @relation("ConversationUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB    User      @relation("ConversationUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+  @@index([lastMessageAt])
+  @@map("anomchat_conversations")
+}
+
+/// Contenido del chat: cada mensaje enviado dentro de una conversación.
+/// `readAt` marca la confirmación de lectura (check amarillo cuando != null).
+/// `replyToId` permite que un mensaje responda a otro de la misma conversación.
+model Message {
+  id             String    @id @unique @default(uuid()) @db.Uuid
+  conversationId String    @map("conversation_id") @db.Uuid
+  senderId       String    @map("sender_id") @db.Uuid
+  content        String    @db.Text
+  readAt         DateTime? @map("read_at")
+  replyToId      String?   @map("reply_to_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  // Mensaje al que responde (si el original se borra, la respuesta queda sin cita).
+  replyTo      Message?     @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies      Message[]    @relation("MessageReplies")
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@index([replyToId])
+  @@map("anomchat_messages")
+}

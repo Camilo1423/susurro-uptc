@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+/*
+ * Modo oscuro basado en atributo: la variante `dark:` se activa cuando <html>
+ * tiene `data-theme="dark"` (lo fija el ThemeProvider, ver context/theme.ts).
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Línea de diseño UPTC (semillero de programación): dorado + carbón, tipografías
+ * Inter (texto) y Sora (títulos). Réplica del design system de uptc_semillero.
+ */
+@theme {
+  --color-uptc-gold: #f2a900;
+  --color-uptc-gold-light: #fdb913;
+  --color-uptc-gold-soft: #fff4db;
+  --color-uptc-carbon: #1b1b1b;
+  --color-uptc-graphite: #2a2a2a;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Sora", "Inter", sans-serif;
+
+  --shadow-soft: 0 8px 30px rgba(27, 27, 27, 0.08);
+  --shadow-gold: 0 8px 24px rgba(242, 169, 0, 0.28);
+
+  --animate-fade-up: fade-up 0.6s ease-out both;
+  --animate-fade-up-slow: fade-up 0.8s 0.15s ease-out both;
+  --animate-fade-out: fade-out 0.6s ease-out both;
+  --animate-scale-in: scale-in 0.4s ease-out both;
+  --animate-pop: pop 0.5s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+  --animate-typing: typing-bounce 1.2s infinite ease-in-out;
+  /* Entrada/salida rápida para la burbuja "escribiendo" dentro del chat. */
+  --animate-typing-in: fade-up 0.2s ease-out both;
+  --animate-typing-out: fade-out 0.2s ease-out both;
+}
+
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes pop {
+  0% {
+    transform: scale(0);
+  }
+  70% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes typing-bounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  html,
+  body,
+  #root {
+    min-height: 100vh;
+  }
+  body {
+    @apply bg-neutral-50 font-sans text-uptc-carbon antialiased dark:bg-uptc-carbon dark:text-neutral-100;
+  }
+}
+
+@layer components {
+  /* Etiqueta de campo */
+  .field-label {
+    @apply mb-1.5 block text-sm font-semibold text-uptc-graphite dark:text-neutral-300;
+  }
+
+  /* Input con anillo de foco dorado */
+  .field-input {
+    @apply w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-uptc-carbon shadow-sm outline-none transition-all duration-200 placeholder:text-neutral-400 hover:border-neutral-300 focus:-translate-y-0.5 focus:border-uptc-gold focus:ring-4 focus:ring-uptc-gold/20 dark:border-neutral-700 dark:bg-uptc-graphite dark:text-neutral-100 dark:placeholder:text-neutral-500;
+  }
+  .field-input-error {
+    @apply border-red-400 focus:border-red-500 focus:ring-red-100;
+  }
+  .field-error {
+    @apply mt-1.5 text-xs font-medium text-red-600 dark:text-red-400;
+  }
+
+  /* Botón primario dorado */
+  .btn-gold {
+    @apply inline-flex items-center justify-center rounded-xl bg-uptc-gold px-6 py-3 text-sm font-bold text-uptc-carbon shadow-gold transition-all duration-200 hover:-translate-y-0.5 hover:bg-uptc-gold-light hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
+  }
+
+  /* Botón secundario (borde) */
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-xl border border-neutral-300 bg-transparent px-4 py-2.5 text-sm font-semibold text-uptc-graphite transition-all duration-200 hover:border-uptc-gold hover:text-uptc-carbon dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-white;
+  }
+
+  /* Badge tipo píldora (dorado sobre fondo oscuro) */
+  .badge-gold {
+    @apply inline-block rounded-full border border-uptc-gold/40 bg-uptc-gold/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-uptc-gold-light;
+  }
+
+  /* Divisor con degradado dorado */
+  .divider-gold {
+    @apply mx-auto h-px w-24 bg-gradient-to-r from-transparent via-uptc-gold to-transparent;
+  }
+}
+
+button {
+  cursor: pointer;
+}
+
+/*
+ * Scrollbar con la línea de diseño UPTC (dorado). Firefox usa `scrollbar-*`;
+ * Chrome/Safari/Edge usan los pseudo-elementos `::-webkit-scrollbar-*`.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242, 169, 0, 0.5) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(242, 169, 0, 0.45);
+  border-radius: 9999px;
+  /* Borde transparente + clip = pulgar más delgado con "padding". */
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(242, 169, 0, 0.75);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Modo oscuro: un poco más sutil sobre fondo carbón. */
+[data-theme="dark"] * {
+  scrollbar-color: rgba(242, 169, 0, 0.4) transparent;
+}
+[data-theme="dark"] *::-webkit-scrollbar-thumb {
+  background-color: rgba(242, 169, 0, 0.35);
+}
+[data-theme="dark"] *::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(242, 169, 0, 0.65);
+}

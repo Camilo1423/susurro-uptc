@@ -1,0 +1,51 @@
+{
+  "isProd": false,
+  "Api": "http://localhost:3000/",
+  "environment": "development",
+  "Routes": {
+    "health": {
+      "check": "/api/v1/health"
+    },
+    "auth": {
+      "signIn": "/api/v1/auth/sign-in",
+      "signUp": "/api/v1/auth/sign-up",
+      "signOut": "/api/v1/auth/sign-out",
+      "refreshToken": "/api/v1/auth/refresh-token",
+      "whoAmI": "/api/v1/auth/who-am-i"
+    },
+    "documentTypes": {
+      "findAll": "/api/v1/document-types"
+    },
+    "socket": {
+      "getSocketCredentials": "/api/v1/socket/auth/socket-token"
+    },
+    "account": {
+      "updateInfo": "/api/v1/account/update-info"
+    },
+    "avatars": {
+      "upload": "/api/v1/avatars",
+      "delete": "/api/v1/avatars",
+      "view": "/api/v1/avatars/:userId"
+    },
+    "conversations": {
+      "findAll": "/api/v1/conversations",
+      "create": "/api/v1/conversations",
+      "random": "/api/v1/conversations/random",
+      "detail": "/api/v1/conversations/:id",
+      "anonymity": "/api/v1/conversations/:id/anonymity",
+      "delete": "/api/v1/conversations/:id",
+      "messages": "/api/v1/conversations/:id/messages",
+      "read": "/api/v1/conversations/:id/read"
+    },
+    "messages": {
+      "findAll": "/api/v1/messages",
+      "findOne": "/api/v1/messages/:id",
+      "create": "/api/v1/messages"
+    }
+  },
+  "Params": {
+    "timeout": 30000,
+    "retryAttempts": 3,
+    "retryDelay": 1000
+  }
+}

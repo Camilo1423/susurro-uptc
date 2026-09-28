@@ -1,0 +1,11 @@
+node_modules
+dist
+src/config/config.json
+.env
+.env.*
+.git
+.gitignore
+*.log
+npm-debug.log*
+Dockerfile
+.dockerignore

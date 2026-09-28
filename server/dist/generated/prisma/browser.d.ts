@@ -1,0 +1,12 @@
+import * as Prisma from './internal/prismaNamespaceBrowser.js';
+export { Prisma };
+export * as $Enums from './enums.js';
+export * from './enums.js';
+export type DocumentType = Prisma.DocumentTypeModel;
+export type User = Prisma.UserModel;
+export type Session = Prisma.SessionModel;
+export type RefreshToken = Prisma.RefreshTokenModel;
+export type UserAvatar = Prisma.UserAvatarModel;
+export type BlackListAccessToken = Prisma.BlackListAccessTokenModel;
+export type Conversation = Prisma.ConversationModel;
+export type Message = Prisma.MessageModel;

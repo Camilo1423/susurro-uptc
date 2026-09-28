@@ -1,0 +1,9 @@
+{
+  "Encripted": "{{IS_PRODUCTION}}",
+  "Api": "{{URL_API_GATEWAY}}",
+  "Params": {
+    "timeout": 30000,
+    "retryAttempts": 3,
+    "retryDelay": 1000
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@Constant": ["src/config"],
+      "@Utils": ["src/utils"],
+      "@Container": ["src/container"],
+      "@Types": ["src/types"],
+      "@UseCase": ["src/services/useCases"],
+      "@Services": ["src/services"],
+      "@Routes": ["src/routes"],
+      "@Pages": ["src/pages"],
+      "@Components": ["src/components"],
+      "@Hooks": ["src/hooks"],
+      "@Providers": ["src/providers"],
+      "@Redux": ["src/store"],
+      "@Assets": ["src/assets"],
+      "@Middleware": ["src/middleware"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}
