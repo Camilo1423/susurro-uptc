@@ -114,6 +114,7 @@ export class SignInController {
         data: user,
       };
     } catch (error) {
+      console.log(error);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Error al iniciar sesión');
     }
