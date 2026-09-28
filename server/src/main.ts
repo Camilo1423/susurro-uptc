@@ -44,8 +44,31 @@ async function bootstrap() {
     }),
   );
 
+  const corsLogger = new Logger('CORS');
+  const corsOrigins = configService.getOrThrow<string[]>('corsOrigins');
+  // Normaliza para tolerar barra final (".../" == "...").
+  const normalize = (o: string) => o.trim().replace(/\/+$/, '');
+  const allowedOrigins = new Set(corsOrigins.map(normalize));
+  corsLogger.log(
+    `Orígenes permitidos: ${[...allowedOrigins].join(', ') || '(ninguno)'}`,
+  );
+
   app.enableCors({
-    origin: configService.getOrThrow<string[]>('corsOrigins'),
+    // Callback: refleja el origen si está permitido; si no, lo registra para
+    // poder diagnosticar por qué el preflight no trae Access-Control-Allow-Origin.
+    origin: (
+      origin: string | undefined,
+      cb: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      if (!origin || allowedOrigins.has(normalize(origin))) {
+        cb(null, true);
+        return;
+      }
+      corsLogger.warn(
+        `Origen BLOQUEADO: "${origin}" — permitidos: ${[...allowedOrigins].join(', ')}`,
+      );
+      cb(null, false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     // `x-timezone-offset` lo envía el cliente (axios) en cada request; sin él en

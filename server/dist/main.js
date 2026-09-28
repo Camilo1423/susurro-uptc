@@ -28,8 +28,20 @@ async function bootstrap() {
         forbidNonWhitelisted: true,
         transform: true,
     }));
+    const corsLogger = new Logger('CORS');
+    const corsOrigins = configService.getOrThrow('corsOrigins');
+    const normalize = (o) => o.trim().replace(/\/+$/, '');
+    const allowedOrigins = new Set(corsOrigins.map(normalize));
+    corsLogger.log(`Orígenes permitidos: ${[...allowedOrigins].join(', ') || '(ninguno)'}`);
     app.enableCors({
-        origin: configService.getOrThrow('corsOrigins'),
+        origin: (origin, cb) => {
+            if (!origin || allowedOrigins.has(normalize(origin))) {
+                cb(null, true);
+                return;
+            }
+            corsLogger.warn(`Origen BLOQUEADO: "${origin}" — permitidos: ${[...allowedOrigins].join(', ')}`);
+            cb(null, false);
+        },
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'x-timezone-offset'],
