@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ─────────────────────────── Build ───────────────────────────
-FROM node:22-slim AS builder
+FROM node:22.12.0-bookworm AS builder
 WORKDIR /app
 
 # El cliente hornea el entorno en build (build-process.js lee process.env):
