@@ -32,7 +32,7 @@ async function bootstrap() {
         origin: configService.getOrThrow('corsOrigins'),
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'x-timezone-offset'],
     });
     const env = configService.getOrThrow('env');
     const urlSwagger = configService.getOrThrow('urlSwagger');

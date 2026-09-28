@@ -48,7 +48,9 @@ async function bootstrap() {
     origin: configService.getOrThrow<string[]>('corsOrigins'),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    // `x-timezone-offset` lo envía el cliente (axios) en cada request; sin él en
+    // la lista, el preflight cross-origin de producción falla con error de CORS.
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-timezone-offset'],
   });
 
   const env = configService.getOrThrow<string>('env');
